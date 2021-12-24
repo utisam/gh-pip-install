@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -eu
+
+print_help() {
+    echo -e '
+Install python package released on GitHub release assets.
+
+Without an explicit tag name argument, a package is downloaded from the
+latest release in the project.
+
+\e[1mUSAGE\e[0m
+  gh pip-install [<tag>]
+
+\e[1mFLAGS\e[0m
+  --asset-name PATTERN          Specify the name regex of assets (default "\\\\.whl$")
+  --force-reinstall             Add --force-reinstall option to pip
+  --help                        Show help for command
+  -I, --ignore-installed        Add -I option to pip
+  --pip                         Specify pip command (default "pip")
+  -R, --repo [HOST/]OWNER/REPO
+  -U, --upgrade                 Add -U option to pip
+
+\e[1mEXAMPLES\e[0m
+  # Install the latest released package of the current repository
+  $ gh pip-install
+
+  # Install the latest package of OWNER/REPO
+  $ gh pip-install --repo OWNER/REPO
+
+  # Install the package tagged as v1.0 of OWNER/REPO
+  $ gh pip-install v1.0
+
+  # Use pip3 command
+  $ gh pip-install --pip pip3
+'
+}
+
+declare ARG_ASSET_NAME='\\.whl$'
+declare ARG_FORCE_REINSTALL=''
+declare ARG_IGNORE_INSTALLED=''
+declare ARG_PIP='pip'
+declare ARG_REPO=''
+declare ARG_TAG=''
+declare ARG_UPGRADE=''
+while [ $# -gt 0 ]; do
+  case "$1" in
+  --asset-name)
+    ARG_ASSET_NAME="$2"
+    shift
+    ;;
+  --force-reinstall)
+    ARG_FORCE_REINSTALL="--force-reinstall"
+    ;;
+  -h|--help)
+    print_help
+    exit 0
+    ;;
+  -I|--ignore-installed)
+    ARG_IGNORE_INSTALLED='-I'
+    ;;
+  --pip)
+    ARG_PIP="$2"
+    shift
+    ;;
+  -R|--repo)
+    ARG_REPO="$2"
+    shift
+    ;;
+  -U|--upgrade)
+    ARG_UPGRADE='-U'
+    ;;
+  *)
+    ARG_TAG="$1"
+  esac
+  shift
+done
+
+_gh() {
+    gh -R "${ARG_REPO}" "$@"
+}
+
+_pip() {
+    "${ARG_PIP}" "$@"
+}
+
+echo "Find the package"
+declare -r PACKAGE_ASSET_NAME=$(_gh release view \
+        --json assets \
+        --jq ".assets[].name | select(test(\"${ARG_ASSET_NAME}\"))" \
+        "${ARG_TAG}")
+
+echo "Download \"${PACKAGE_ASSET_NAME}\""
+declare -r DOWNLOAD_DIR=$(mktemp -d)
+trap 'rm -rf -- "${DOWNLOAD_DIR}"' EXIT
+_gh release download \
+    --dir "${DOWNLOAD_DIR}" \
+    --pattern "${PACKAGE_ASSET_NAME}"
+
+echo "Install \"${PACKAGE_ASSET_NAME}\""
+_pip install \
+    ${ARG_FORCE_REINSTALL} \
+    ${ARG_IGNORE_INSTALLED} \
+    ${ARG_UPGRADE} \
+    "${DOWNLOAD_DIR}/${PACKAGE_ASSET_NAME}"
