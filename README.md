@@ -14,8 +14,14 @@ This extension depends on `pip` command.
 ## Usage
 
 ```sh
+# Install the latest released package of the current repository
 gh pip-install
+# Install the latest package of OWNER/REPO
+gh pip-install --repo OWNER/REPO
+# Install the package tagged as v1.0 of OWNER/REPO
+gh pip-install v1.0
+# Use pip3 command
+gh pip-install --pip pip3
 ```
 
-This command installs the latest released package of the current repository.
 Use `--help` option for more details.
