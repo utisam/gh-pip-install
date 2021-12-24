@@ -14,7 +14,7 @@ This extension depends on `pip` command.
 ## Usage
 
 ```sh
-# Install the latest released package of the current repository
+# Install the latest released package ("\\.whl$") of the current repository
 gh pip-install
 # Install the latest package of OWNER/REPO
 gh pip-install --repo OWNER/REPO
