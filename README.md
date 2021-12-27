@@ -6,7 +6,7 @@ install python package released on GitHub release assets.
 ## Installation
 
 ```sh
-gh extension install utisam/pip-install
+gh extension install utisam/gh-pip-install
 ```
 
 This extension depends on `pip` command.
